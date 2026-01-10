@@ -56,38 +56,13 @@ Start-Process "http://${LinuxIP}:8888/dashboard"
 Write-Host "Opening Windows OpenCode..."
 Start-Process "http://localhost:8080"
 
-# Start task worker in background
+# Start task worker in separate window
 Write-Host "Starting task worker..."
-Start-Job -ScriptBlock {
-    param($ScriptDir, $Server)
-    $MyMachine = "windows"
-    $notifiedTasks = @{}
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$ScriptDir'; .\scripts\crosslink-worker.ps1"
 
-    while ($true) {
-        try {
-            $response = Invoke-RestMethod -Uri "$Server/tasks/pending/$MyMachine" -TimeoutSec 10
-            if ($response.pending_count -gt 0) {
-                foreach ($task in $response.tasks) {
-                    if (-not $notifiedTasks.ContainsKey($task.id)) {
-                        $notifiedTasks[$task.id] = $true
-                        Write-Host "`n======== NEW TASK from $($task.from_machine) ========" -ForegroundColor Yellow
-                        Write-Host "ID: $($task.id)" -ForegroundColor Cyan
-                        Write-Host "Prompt: $($task.prompt)" -ForegroundColor White
-                        Write-Host "Respond: .\scripts\crosslink-peer.ps1 respond $($task.id) 'your response'" -ForegroundColor Green
-                    }
-                }
-            }
-        } catch {}
-        Start-Sleep -Seconds 5
-    }
-} -ArgumentList $ScriptDir, "http://${LinuxIP}:8888" | Out-Null
-
-# Start stats collector in background
+# Start stats collector in background (silent)
 Write-Host "Starting stats collector..."
-Start-Job -ScriptBlock {
-    param($ScriptDir)
-    & "$ScriptDir\scripts\windows-collector.ps1"
-} -ArgumentList $ScriptDir | Out-Null
+Start-Process powershell -ArgumentList "-WindowStyle", "Hidden", "-Command", "Set-Location '$ScriptDir'; .\scripts\windows-collector.ps1" -WindowStyle Hidden
 
 Write-Host ""
 Write-Host "============================================"
@@ -97,24 +72,9 @@ Write-Host "  Dashboard:    http://${LinuxIP}:8888/dashboard"
 Write-Host "  OpenCode:     http://localhost:8080"
 Write-Host "  Task Queue:   http://${LinuxIP}:8888/tasks"
 Write-Host ""
-Write-Host "  Background jobs running:"
-Write-Host "    - Task worker (polling every 5s)"
-Write-Host "    - Stats collector (sending every 2s)"
+Write-Host "  Windows opened:"
+Write-Host "    - Task worker (shows incoming tasks)"
+Write-Host "    - Stats collector (hidden, sending data)"
 Write-Host ""
-Write-Host "  Press Enter to stop all jobs and exit"
+Write-Host "  Close this window when done."
 Write-Host "============================================"
-Write-Host ""
-
-# Wait for user input, periodically check jobs for output
-while (-not [Console]::KeyAvailable) {
-    # Show any job output
-    Get-Job | Receive-Job 2>$null
-    Start-Sleep -Milliseconds 500
-}
-
-# Cleanup on exit
-Read-Host | Out-Null
-Write-Host "Stopping jobs..."
-Get-Job | Stop-Job
-Get-Job | Remove-Job
-Write-Host "Goodbye!"
