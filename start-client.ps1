@@ -27,9 +27,13 @@ if (-not $connected) {
 Write-Host "Connected to Linux server!" -ForegroundColor Green
 Write-Host ""
 
-# Open dashboard in browser
+# Open dashboard in browser (on Linux server)
 Write-Host "Opening Crosslink dashboard..."
 Start-Process "http://${LinuxIP}:8888/dashboard"
+
+# Open Windows' own OpenCode (localhost)
+Write-Host "Opening Windows OpenCode..."
+Start-Process "http://localhost:8080"
 
 # Start stats collector in background
 Write-Host "Starting stats collector..."
@@ -37,7 +41,10 @@ Write-Host ""
 Write-Host "============================================"
 Write-Host "  Crosslink is running!"
 Write-Host "============================================"
-Write-Host "  Dashboard: http://${LinuxIP}:8888/dashboard"
+Write-Host "  Dashboard:    http://${LinuxIP}:8888/dashboard"
+Write-Host "  OpenCode:     http://localhost:8080"
+Write-Host "  Task Queue:   http://${LinuxIP}:8888/tasks"
+Write-Host ""
 Write-Host "  Sending stats every 2 seconds..."
 Write-Host ""
 Write-Host "  Press Ctrl+C to stop"
