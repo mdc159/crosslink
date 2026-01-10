@@ -3,17 +3,41 @@ Crosslink - Backend API
 Cross-platform system monitoring for Linux and Windows machines
 """
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Literal
 from datetime import datetime
 import asyncio
 import psutil
 import platform
 import json
+import uuid
 
 app = FastAPI(title="Crosslink", version="1.0.0")
+
+
+# =============================================================================
+# TASK QUEUE - Agent-to-Agent Communication
+# =============================================================================
+
+class Task(BaseModel):
+    prompt: str
+    from_machine: Literal["linux", "windows"]
+    to_machine: Literal["linux", "windows"]
+    context: Optional[dict] = None  # Optional file paths, code snippets, etc.
+
+class TaskResponse(BaseModel):
+    task_id: str
+    result: str
+    error: Optional[str] = None
+
+# In-memory task store
+tasks: dict[str, dict] = {}
+
+
+def create_task_id() -> str:
+    return str(uuid.uuid4())[:8]
 
 # Allow cross-origin requests from frontend and Windows
 app.add_middleware(
@@ -202,6 +226,72 @@ async def health():
         "linux_stats": machine_stats["linux"] is not None,
         "windows_stats": machine_stats["windows"] is not None,
         "connected_clients": len(connected_clients)
+    }
+
+
+# =============================================================================
+# TASK QUEUE ENDPOINTS
+# =============================================================================
+
+@app.post("/tasks")
+async def create_task(task: Task):
+    """Submit a task for another machine's agent to handle"""
+    task_id = create_task_id()
+    tasks[task_id] = {
+        "id": task_id,
+        "prompt": task.prompt,
+        "from_machine": task.from_machine,
+        "to_machine": task.to_machine,
+        "context": task.context,
+        "status": "pending",
+        "result": None,
+        "error": None,
+        "created_at": datetime.now().isoformat(),
+        "completed_at": None
+    }
+    return {"task_id": task_id, "status": "pending"}
+
+
+@app.get("/tasks/pending/{machine}")
+async def get_pending_tasks(machine: str):
+    """Get all pending tasks assigned to a machine"""
+    pending = [
+        t for t in tasks.values()
+        if t["to_machine"] == machine and t["status"] == "pending"
+    ]
+    return {"machine": machine, "pending_count": len(pending), "tasks": pending}
+
+
+@app.get("/tasks/{task_id}")
+async def get_task(task_id: str):
+    """Get status and result of a specific task"""
+    if task_id not in tasks:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return tasks[task_id]
+
+
+@app.post("/tasks/{task_id}/complete")
+async def complete_task(task_id: str, response: TaskResponse):
+    """Mark a task as complete with result"""
+    if task_id not in tasks:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    tasks[task_id]["status"] = "completed"
+    tasks[task_id]["result"] = response.result
+    tasks[task_id]["error"] = response.error
+    tasks[task_id]["completed_at"] = datetime.now().isoformat()
+
+    return {"status": "completed", "task_id": task_id}
+
+
+@app.get("/tasks")
+async def list_all_tasks():
+    """List all tasks (for debugging)"""
+    return {
+        "total": len(tasks),
+        "pending": len([t for t in tasks.values() if t["status"] == "pending"]),
+        "completed": len([t for t in tasks.values() if t["status"] == "completed"]),
+        "tasks": list(tasks.values())
     }
 
 
