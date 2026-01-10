@@ -1,6 +1,6 @@
-# Dual Machine Monitor
+# Crosslink
 
-Real-time system monitoring dashboard for Linux and Windows machines connected over LAN.
+Cross-platform system monitoring dashboard for Linux and Windows machines connected over LAN.
 
 **Built collaboratively by AI agents on two machines working together.**
 
@@ -16,7 +16,7 @@ Real-time system monitoring dashboard for Linux and Windows machines connected o
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Dual Machine Monitor                      │
+│                         Crosslink                            │
 ├─────────────────────────────────────────────────────────────┤
 │  Linux (192.168.50.2)          Windows (192.168.50.1)       │
 │  ├── FastAPI Backend (:8888)    ├── Stats Collector         │
@@ -32,7 +32,7 @@ Real-time system monitoring dashboard for Linux and Windows machines connected o
 
 ```bash
 # Clone and start
-cd ~/projects/dual-machine-monitor
+cd ~/projects/crosslink
 ./start.sh
 
 # Access dashboard at http://localhost:8888
@@ -81,7 +81,7 @@ sudo nmcli connection up "Wired connection 1"
 ## Project Structure
 
 ```
-dual-machine-monitor/
+crosslink/
 ├── backend/
 │   ├── main.py           # FastAPI server
 │   └── requirements.txt  # Python dependencies

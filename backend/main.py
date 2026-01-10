@@ -1,6 +1,6 @@
 """
-Dual Machine Monitor - Backend API
-Collects and serves system stats from Linux and Windows machines
+Crosslink - Backend API
+Cross-platform system monitoring for Linux and Windows machines
 """
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -13,7 +13,7 @@ import psutil
 import platform
 import json
 
-app = FastAPI(title="Dual Machine Monitor", version="1.0.0")
+app = FastAPI(title="Crosslink", version="1.0.0")
 
 # Allow cross-origin requests from frontend and Windows
 app.add_middleware(
