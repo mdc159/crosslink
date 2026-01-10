@@ -1,15 +1,18 @@
 # Windows System Stats Collector
 # Sends stats to Linux backend every 5 seconds
-# Run this on your Windows 11 PC
+# Includes retry logic for unreliable connections
 
 $LinuxServer = "http://192.168.50.2:8888"
 $Interval = 5  # seconds
+$MaxRetryInterval = 60
+$RetryInterval = $Interval
+$ConnectionOK = $false
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  Dual Machine Monitor - Windows Agent" -ForegroundColor Cyan
+Write-Host "  Crosslink Stats Collector - Windows" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Sending stats to: $LinuxServer" -ForegroundColor Yellow
+Write-Host "Server: $LinuxServer" -ForegroundColor Yellow
 Write-Host "Interval: ${Interval}s" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "Press Ctrl+C to stop" -ForegroundColor Gray
@@ -63,13 +66,34 @@ while ($true) {
         $response = Invoke-RestMethod -Uri "$LinuxServer/stats/windows" `
                                        -Method Post `
                                        -Body $json `
-                                       -ContentType "application/json"
+                                       -ContentType "application/json" `
+                                       -TimeoutSec 10 `
+                                       -ErrorAction Stop
+
+        # Connection successful
+        if (-not $ConnectionOK) {
+            Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Connected to $LinuxServer" -ForegroundColor Green
+            $ConnectionOK = $true
+            $RetryInterval = $Interval
+        }
 
         $time = Get-Date -Format "HH:mm:ss"
         Write-Host "[$time] Sent: CPU $($stats.cpu_percent)% | RAM $($stats.memory_percent)% | Disk $($stats.disk_percent)%" -ForegroundColor Green
     }
     catch {
-        Write-Host "[$time] Error: $($_.Exception.Message)" -ForegroundColor Red
+        # Connection failed
+        if ($ConnectionOK) {
+            Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Connection lost to $LinuxServer" -ForegroundColor Red
+            $ConnectionOK = $false
+        }
+
+        $time = Get-Date -Format "HH:mm:ss"
+        Write-Host "[$time] Offline - retrying in ${RetryInterval}s..." -ForegroundColor Yellow
+
+        # Exponential backoff (capped at MaxRetryInterval)
+        Start-Sleep -Seconds $RetryInterval
+        $RetryInterval = [Math]::Min($RetryInterval * 2, $MaxRetryInterval)
+        continue
     }
 
     Start-Sleep -Seconds $Interval

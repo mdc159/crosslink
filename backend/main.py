@@ -14,6 +14,9 @@ import platform
 import json
 import uuid
 
+# SQLite persistence for task queue
+import database
+
 app = FastAPI(title="Crosslink", version="1.0.0")
 
 
@@ -31,9 +34,6 @@ class TaskResponse(BaseModel):
     task_id: str
     result: str
     error: Optional[str] = None
-
-# In-memory task store
-tasks: dict[str, dict] = {}
 
 
 def create_task_id() -> str:
@@ -237,62 +237,49 @@ async def health():
 async def create_task(task: Task):
     """Submit a task for another machine's agent to handle"""
     task_id = create_task_id()
-    tasks[task_id] = {
-        "id": task_id,
-        "prompt": task.prompt,
-        "from_machine": task.from_machine,
-        "to_machine": task.to_machine,
-        "context": task.context,
-        "status": "pending",
-        "result": None,
-        "error": None,
-        "created_at": datetime.now().isoformat(),
-        "completed_at": None
-    }
+    database.create_task(
+        task_id=task_id,
+        prompt=task.prompt,
+        from_machine=task.from_machine,
+        to_machine=task.to_machine,
+        context=task.context
+    )
     return {"task_id": task_id, "status": "pending"}
 
 
 @app.get("/tasks/pending/{machine}")
-async def get_pending_tasks(machine: str):
+async def get_pending_tasks_endpoint(machine: str):
     """Get all pending tasks assigned to a machine"""
-    pending = [
-        t for t in tasks.values()
-        if t["to_machine"] == machine and t["status"] == "pending"
-    ]
+    pending = database.get_pending_tasks(machine)
     return {"machine": machine, "pending_count": len(pending), "tasks": pending}
 
 
 @app.get("/tasks/{task_id}")
-async def get_task(task_id: str):
+async def get_task_endpoint(task_id: str):
     """Get status and result of a specific task"""
-    if task_id not in tasks:
+    task = database.get_task(task_id)
+    if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
-    return tasks[task_id]
+    return task
 
 
 @app.post("/tasks/{task_id}/complete")
-async def complete_task(task_id: str, response: TaskResponse):
+async def complete_task_endpoint(task_id: str, response: TaskResponse):
     """Mark a task as complete with result"""
-    if task_id not in tasks:
+    success = database.complete_task(
+        task_id=task_id,
+        result=response.result,
+        error=response.error
+    )
+    if not success:
         raise HTTPException(status_code=404, detail="Task not found")
-
-    tasks[task_id]["status"] = "completed"
-    tasks[task_id]["result"] = response.result
-    tasks[task_id]["error"] = response.error
-    tasks[task_id]["completed_at"] = datetime.now().isoformat()
-
     return {"status": "completed", "task_id": task_id}
 
 
 @app.get("/tasks")
 async def list_all_tasks():
     """List all tasks (for debugging)"""
-    return {
-        "total": len(tasks),
-        "pending": len([t for t in tasks.values() if t["status"] == "pending"]),
-        "completed": len([t for t in tasks.values() if t["status"] == "completed"]),
-        "tasks": list(tasks.values())
-    }
+    return database.get_all_tasks()
 
 
 if __name__ == "__main__":
