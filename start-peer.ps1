@@ -5,8 +5,17 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $LinuxIP = "192.168.50.2"
 
 Write-Host "============================================"
-Write-Host "  Crosslink - Windows Client"
+Write-Host "  Crosslink Peer - Starting..."
 Write-Host "============================================"
+Write-Host ""
+
+# Sync with repo first
+Write-Host "Pulling latest from git..."
+Set-Location $ScriptDir
+git pull --quiet 2>$null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Git pull skipped (offline or no changes)" -ForegroundColor Gray
+}
 Write-Host ""
 
 # Check connection to Linux server

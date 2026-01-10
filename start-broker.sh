@@ -6,8 +6,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 echo "============================================"
-echo "  Crosslink - Starting..."
+echo "  Crosslink Broker - Starting..."
 echo "============================================"
+
+# Sync with repo first
+echo "Pulling latest from git..."
+git pull --quiet 2>/dev/null || echo "Git pull skipped (offline or no changes)"
+echo ""
 
 # Check if Docker is running
 if ! docker info > /dev/null 2>&1; then
