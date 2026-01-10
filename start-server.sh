@@ -33,6 +33,15 @@ for i in {1..30}; do
     sleep 1
 done
 
+# Start OpenCode if not already running
+if curl -s http://localhost:8080 > /dev/null 2>&1; then
+    echo "OpenCode already running"
+else
+    echo "Starting OpenCode server..."
+    nohup opencode serve --port 8080 > /tmp/opencode.log 2>&1 &
+    sleep 3
+fi
+
 # Open web interfaces
 echo "Opening web interfaces..."
 sleep 1
@@ -40,10 +49,8 @@ sleep 1
 # Open Crosslink Dashboard
 xdg-open "http://localhost:8888/dashboard" 2>/dev/null &
 
-# Open OpenCode (if running)
-if curl -s http://localhost:8080 > /dev/null 2>&1; then
-    xdg-open "http://localhost:8080" 2>/dev/null &
-fi
+# Open OpenCode
+xdg-open "http://localhost:8080" 2>/dev/null &
 
 echo ""
 echo "============================================"

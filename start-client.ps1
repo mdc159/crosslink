@@ -27,6 +27,18 @@ if (-not $connected) {
 Write-Host "Connected to Linux server!" -ForegroundColor Green
 Write-Host ""
 
+# Start OpenCode server if not already running
+$openCodeRunning = $false
+try {
+    $null = Invoke-WebRequest -Uri "http://localhost:8080" -TimeoutSec 2 -ErrorAction Stop
+    $openCodeRunning = $true
+    Write-Host "OpenCode already running" -ForegroundColor Green
+} catch {
+    Write-Host "Starting OpenCode server..."
+    Start-Process -FilePath "opencode" -ArgumentList "serve", "--port", "8080" -WindowStyle Minimized
+    Start-Sleep -Seconds 3
+}
+
 # Open dashboard in browser (on Linux server)
 Write-Host "Opening Crosslink dashboard..."
 Start-Process "http://${LinuxIP}:8888/dashboard"
