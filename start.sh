@@ -1,11 +1,12 @@
 #!/bin/bash
-# Dual Machine Monitor - Startup Script
-# Starts both backend API and serves frontend
+# Crosslink - Startup Script
+# Starts backend API with task queue and serves frontend
 
-cd /home/hammer/projects/dual-machine-monitor
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
 echo "============================================"
-echo "  🖥️  Dual Machine Monitor"
+echo "  Crosslink - Cross-Machine Agent Bridge"
 echo "============================================"
 echo ""
 
@@ -24,13 +25,22 @@ uv pip install -r backend/requirements.txt -q
 echo "[3/3] Starting server..."
 echo ""
 echo "============================================"
-echo "  Dashboard: http://192.168.50.2:8888"
-echo "  API:       http://192.168.50.2:8888/stats"
-echo "  WebSocket: ws://192.168.50.2:8888/ws"
+echo "  SERVICES"
+echo "============================================"
+echo "  Dashboard:   http://192.168.50.2:8888"
+echo "  API:         http://192.168.50.2:8888/stats"
+echo "  Task Queue:  http://192.168.50.2:8888/tasks"
+echo "  WebSocket:   ws://192.168.50.2:8888/ws"
+echo ""
+echo "  TASK QUEUE ENDPOINTS"
+echo "  POST /tasks              - Submit task"
+echo "  GET  /tasks/pending/{m}  - Poll for tasks"
+echo "  POST /tasks/{id}/complete - Return result"
 echo "============================================"
 echo ""
-echo "On Windows, run:"
-echo "  powershell -ExecutionPolicy Bypass -File scripts/windows-collector.ps1"
+echo "On Windows, clone repo and run collector:"
+echo "  git clone https://github.com/mdc159/crosslink.git"
+echo "  powershell -File scripts/windows-collector.ps1"
 echo ""
 echo "Press Ctrl+C to stop"
 echo ""
@@ -42,8 +52,8 @@ import uvicorn
 from fastapi.staticfiles import StaticFiles
 from main import app
 
-# Mount frontend
-app.mount('/', StaticFiles(directory='../frontend', html=True), name='frontend')
+# Mount frontend at /dashboard to avoid conflict with API routes
+app.mount('/dashboard', StaticFiles(directory='../frontend', html=True), name='frontend')
 
 uvicorn.run(app, host='0.0.0.0', port=8888)
 "

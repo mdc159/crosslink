@@ -30,13 +30,19 @@ Cross-platform system monitoring dashboard for Linux and Windows machines connec
 
 ### On Linux (Server)
 
+**Option 1: Direct**
 ```bash
-# Clone and start
 cd ~/projects/crosslink
 ./start.sh
-
-# Access dashboard at http://localhost:8888
 ```
+
+**Option 2: Docker**
+```bash
+cd ~/projects/crosslink
+docker compose up -d
+```
+
+Access dashboard at `http://localhost:8888/dashboard`
 
 ### On Windows (Client)
 
@@ -69,6 +75,7 @@ sudo nmcli connection up "Wired connection 1"
 
 ## API Endpoints
 
+### System Monitoring
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/` | GET | Service info |
@@ -77,18 +84,30 @@ sudo nmcli connection up "Wired connection 1"
 | `/stats/windows` | POST | Receive Windows stats |
 | `/ws` | WebSocket | Real-time updates |
 | `/health` | GET | Health check |
+| `/dashboard` | GET | Web dashboard |
+
+### Task Queue (Agent-to-Agent Communication)
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/tasks` | POST | Submit task for another machine |
+| `/tasks` | GET | List all tasks |
+| `/tasks/pending/{machine}` | GET | Get pending tasks for machine |
+| `/tasks/{task_id}` | GET | Get task status/result |
+| `/tasks/{task_id}/complete` | POST | Mark task complete with result |
 
 ## Project Structure
 
 ```
 crosslink/
 ├── backend/
-│   ├── main.py           # FastAPI server
+│   ├── main.py           # FastAPI server + task queue
 │   └── requirements.txt  # Python dependencies
 ├── frontend/
 │   └── index.html        # Dashboard UI
 ├── scripts/
 │   └── windows-collector.ps1  # Windows stats collector
+├── Dockerfile            # Container build
+├── docker-compose.yml    # Container orchestration
 ├── start.sh              # Linux startup script
 └── README.md
 ```
