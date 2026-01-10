@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Crosslink
+Comment=Cross-Machine Agent Bridge
+Exec=INSTALL_PATH/launch.sh
+Icon=network-workgroup
+Terminal=true
+Categories=Development;Network;
+StartupNotify=true

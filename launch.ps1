@@ -1,0 +1,48 @@
+# Crosslink Windows Launcher
+# Starts stats collector and opens dashboard
+
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$LinuxIP = "192.168.50.2"
+
+Write-Host "============================================"
+Write-Host "  Crosslink - Windows Client"
+Write-Host "============================================"
+Write-Host ""
+
+# Check connection to Linux server
+Write-Host "Checking connection to Linux server..."
+$connected = Test-Connection -ComputerName $LinuxIP -Count 1 -Quiet
+
+if (-not $connected) {
+    Write-Host "ERROR: Cannot reach Linux server at $LinuxIP" -ForegroundColor Red
+    Write-Host "Make sure:"
+    Write-Host "  1. Ethernet cable is connected"
+    Write-Host "  2. Windows IP is set to 192.168.50.1"
+    Write-Host "  3. Linux Crosslink server is running"
+    Write-Host ""
+    Read-Host "Press Enter to exit"
+    exit 1
+}
+
+Write-Host "Connected to Linux server!" -ForegroundColor Green
+Write-Host ""
+
+# Open dashboard in browser
+Write-Host "Opening Crosslink dashboard..."
+Start-Process "http://${LinuxIP}:8888/dashboard"
+
+# Start stats collector in background
+Write-Host "Starting stats collector..."
+Write-Host ""
+Write-Host "============================================"
+Write-Host "  Crosslink is running!"
+Write-Host "============================================"
+Write-Host "  Dashboard: http://${LinuxIP}:8888/dashboard"
+Write-Host "  Sending stats every 2 seconds..."
+Write-Host ""
+Write-Host "  Press Ctrl+C to stop"
+Write-Host "============================================"
+Write-Host ""
+
+# Run the collector
+& "$ScriptDir\scripts\windows-collector.ps1"
