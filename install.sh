@@ -10,7 +10,7 @@ sed "s|INSTALL_PATH|$SCRIPT_DIR|g" "$SCRIPT_DIR/scripts/Crosslink.desktop" > ~/D
 
 # Make executable
 chmod +x ~/Desktop/Crosslink.desktop
-chmod +x "$SCRIPT_DIR/launch.sh"
+chmod +x "$SCRIPT_DIR/start-server.sh"
 
 # Trust the desktop file (GNOME)
 gio set ~/Desktop/Crosslink.desktop metadata::trusted true 2>/dev/null || true

@@ -10,7 +10,7 @@ Write-Host "Installing Crosslink desktop shortcut..."
 # Create shortcut
 $WshShell = New-Object -ComObject WScript.Shell
 $Shortcut = $WshShell.CreateShortcut($ShortcutPath)
-$Shortcut.TargetPath = Join-Path $ScriptDir "launch.bat"
+$Shortcut.TargetPath = Join-Path $ScriptDir "start-client.bat"
 $Shortcut.WorkingDirectory = $ScriptDir
 $Shortcut.Description = "Crosslink - Cross-Machine Agent Bridge"
 $Shortcut.Save()
