@@ -42,6 +42,11 @@ else
     sleep 3
 fi
 
+# Start task worker in background
+echo "Starting task worker..."
+nohup "$SCRIPT_DIR/scripts/crosslink-worker.sh" > /tmp/crosslink-worker.log 2>&1 &
+WORKER_PID=$!
+
 # Open web interfaces
 echo "Opening web interfaces..."
 sleep 1
@@ -54,11 +59,18 @@ xdg-open "http://localhost:8080" 2>/dev/null &
 
 echo ""
 echo "============================================"
-echo "  Crosslink is running!"
+echo "  Crosslink Broker is running!"
 echo "============================================"
 echo "  Dashboard:  http://localhost:8888/dashboard"
 echo "  Task Queue: http://localhost:8888/tasks"
 echo "  OpenCode:   http://localhost:8080"
 echo ""
-echo "  To stop: docker compose down"
+echo "  Background processes:"
+echo "    - Broker (Docker container)"
+echo "    - Task worker (PID: $WORKER_PID)"
+echo "    - OpenCode server"
+echo ""
+echo "  To stop all:"
+echo "    docker compose down"
+echo "    kill $WORKER_PID"
 echo "============================================"
